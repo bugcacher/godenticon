@@ -15,6 +15,13 @@ const (
 	AVATAR_SIZE_9 AvatarSize = 9
 )
 
+type Output int
+
+const (
+	OUTPUT_FILE Output = iota
+	OUTPUT_BUFFER
+)
+
 const (
 	defaultFileName = "avatar.png"
 )

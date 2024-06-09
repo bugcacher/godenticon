@@ -12,9 +12,9 @@ func main() {
 		avatar.WithSize(avatar.AVATAR_SIZE_5),
 		avatar.WithAlgorithm(avatar.ALGORITHM_2),
 		avatar.WithOutputDir("icons"),
-		avatar.WithDarkMode(),
 	)
-	if err := avatar.GenerateAvatar(); err != nil {
+	_, err := avatar.GenerateAvatar()
+	if err != nil {
 		log.Default().Fatalf("failed to create avatar. Error: %v", err)
 	}
 }

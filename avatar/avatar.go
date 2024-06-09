@@ -1,6 +1,7 @@
 package avatar
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"image"
@@ -15,19 +16,31 @@ import (
 type CreateOption func(a *Avatar)
 
 type Avatar struct {
-	value    string
-	path     string
-	size     AvatarSize
-	algo     Algorithm
-	image    *image.RGBA
-	darkMode bool
+	value      string
+	path       string
+	size       AvatarSize
+	algo       Algorithm
+	darkMode   bool
+	outputType Output
+	image      *image.RGBA
 }
 
+type AvatarResult struct {
+	// Path contains the filepath of the avatar generated.
+	// Path will be empty if Output type is OUTPUT_BUFFER
+	Path string
+	// Buffer contains the generate avatart buffer.
+	// Buffer will be nil if Output type in OUTPUT_FILE
+	Buffer *bytes.Buffer
+}
+
+// New returns an Avatar object which can be used to generate an identicon.
 func New(value string, opts ...CreateOption) *Avatar {
 	avatar := &Avatar{
-		value: value,
-		size:  AVATAR_SIZE_5,
-		algo:  ALGORITHM_1,
+		value:      value,
+		size:       AVATAR_SIZE_5,
+		algo:       ALGORITHM_1,
+		outputType: OUTPUT_FILE,
 	}
 	for _, opt := range opts {
 		opt(avatar)
@@ -62,7 +75,13 @@ func WithDarkMode() func(a *Avatar) {
 	}
 }
 
-func (av *Avatar) GenerateAvatar() error {
+func WithOutputType(outputType Output) func(a *Avatar) {
+	return func(a *Avatar) {
+		a.outputType = outputType
+	}
+}
+
+func (av *Avatar) GenerateAvatar() (*AvatarResult, error) {
 	hash := sha256.Sum256([]byte(av.value))
 	seed := binary.BigEndian.Uint32(hash[:])
 	rand.Seed(int64(seed))
@@ -78,7 +97,24 @@ func (av *Avatar) GenerateAvatar() error {
 
 	av.applyAlgorithm(avatarColor, av.darkMode)
 
-	return av.saveToFile()
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, av.image); err != nil {
+		return nil, err
+	}
+
+	switch av.outputType {
+	case OUTPUT_FILE:
+		filePath, err := av.saveToFile()
+		if err != nil {
+			return nil, err
+		}
+		return &AvatarResult{Path: filePath}, nil
+	case OUTPUT_BUFFER:
+		return &AvatarResult{Buffer: &buf}, nil
+	}
+
+	return nil, ErrUnknownOutputType
+
 }
 
 func (av *Avatar) applyAlgorithm(colorToFill color.Color, darkMode bool) {
@@ -86,15 +122,15 @@ func (av *Avatar) applyAlgorithm(colorToFill color.Color, darkMode bool) {
 	algoFunc(av.image, int(av.size), colorToFill, darkMode)
 }
 
-func (av *Avatar) saveToFile() error {
+func (av *Avatar) saveToFile() (string, error) {
 	outputPath := filepath.Join(av.path, defaultFileName)
 	outFile, err := os.Create(outputPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer outFile.Close()
 	if err := png.Encode(outFile, av.image); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return outputPath, nil
 }
