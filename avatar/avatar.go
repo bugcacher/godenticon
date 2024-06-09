@@ -11,6 +11,8 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/image/draw"
 )
 
 type CreateOption func(a *Avatar)
@@ -22,6 +24,7 @@ type Avatar struct {
 	algo       Algorithm
 	darkMode   bool
 	outputType Output
+	dimension  uint
 	image      *image.RGBA
 }
 
@@ -29,7 +32,7 @@ type AvatarResult struct {
 	// Path contains the filepath of the avatar generated.
 	// Path will be empty if Output type is OUTPUT_BUFFER
 	Path string
-	// Buffer contains the generate avatart buffer.
+	// Buffer contains the generate avatar buffer.
 	// Buffer will be nil if Output type in OUTPUT_FILE
 	Buffer *bytes.Buffer
 }
@@ -41,6 +44,7 @@ func New(value string, opts ...CreateOption) *Avatar {
 		size:       AVATAR_SIZE_5,
 		algo:       ALGORITHM_1,
 		outputType: OUTPUT_FILE,
+		dimension:  100,
 	}
 	for _, opt := range opts {
 		opt(avatar)
@@ -48,7 +52,7 @@ func New(value string, opts ...CreateOption) *Avatar {
 	return avatar
 }
 
-// WithSize sets the AvatarSize of the generated avatart
+// WithSize sets the AvatarSize of the generated avatar
 func WithSize(size AvatarSize) func(a *Avatar) {
 	return func(a *Avatar) {
 		a.size = size
@@ -89,6 +93,12 @@ func WithOutputType(outputType Output) func(a *Avatar) {
 	}
 }
 
+// WithDimension sets the dimensions (height * width) of the generated Avatar.
+func WithDimension(dimension uint) func(a *Avatar) {
+	return func(a *Avatar) {
+		a.dimension = dimension
+	}
+}
 
 // GenerateAvatar generates an unique avatar for the given value.
 func (av *Avatar) GenerateAvatar() (*AvatarResult, error) {
@@ -106,6 +116,8 @@ func (av *Avatar) GenerateAvatar() (*AvatarResult, error) {
 	av.image = image.NewRGBA(image.Rect(0, 0, int(height), int(width)))
 
 	av.applyAlgorithm(avatarColor, av.darkMode)
+
+	av.scaleImage()
 
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, av.image); err != nil {
@@ -130,6 +142,12 @@ func (av *Avatar) GenerateAvatar() (*AvatarResult, error) {
 func (av *Avatar) applyAlgorithm(colorToFill color.Color, darkMode bool) {
 	algoFunc := algoExecutorMap[av.algo]
 	algoFunc(av.image, int(av.size), colorToFill, darkMode)
+}
+
+func (av *Avatar) scaleImage() {
+	scaledImage := image.NewRGBA(image.Rect(0, 0, int(av.dimension), int(av.dimension)))
+	draw.NearestNeighbor.Scale(scaledImage, scaledImage.Bounds(), av.image, av.image.Bounds(), draw.Over, nil)
+	av.image = scaledImage
 }
 
 func (av *Avatar) saveToFile() (string, error) {
