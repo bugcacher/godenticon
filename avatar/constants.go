@@ -7,12 +7,12 @@ const (
 	ALGORITHM_2
 )
 
-type AvatarSize uint
+type PatternSize uint
 
 const (
-	AVATAR_SIZE_5 AvatarSize = 5
-	AVATAR_SIZE_7 AvatarSize = 7
-	AVATAR_SIZE_9 AvatarSize = 9
+	PATTERN_SIZE_5 PatternSize = 5
+	PATTERN_SIZE_7 PatternSize = 7
+	PATTERN_SIZE_9 PatternSize = 9
 )
 
 type Output int

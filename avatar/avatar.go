@@ -18,14 +18,14 @@ import (
 type CreateOption func(a *Avatar)
 
 type Avatar struct {
-	value      string
-	path       string
-	size       AvatarSize
-	algo       Algorithm
-	darkMode   bool
-	outputType Output
-	dimension  uint
-	image      *image.RGBA
+	value       string
+	path        string
+	patternSize PatternSize
+	algo        Algorithm
+	darkMode    bool
+	outputType  Output
+	dimension   uint
+	image       *image.RGBA
 }
 
 type AvatarResult struct {
@@ -40,11 +40,11 @@ type AvatarResult struct {
 // New returns an Avatar object which can be used to generate an identicon.
 func New(value string, opts ...CreateOption) *Avatar {
 	avatar := &Avatar{
-		value:      value,
-		size:       AVATAR_SIZE_5,
-		algo:       ALGORITHM_1,
-		outputType: OUTPUT_FILE,
-		dimension:  100,
+		value:       value,
+		patternSize: PATTERN_SIZE_5,
+		algo:        ALGORITHM_1,
+		outputType:  OUTPUT_FILE,
+		dimension:   100,
 	}
 	for _, opt := range opts {
 		opt(avatar)
@@ -52,10 +52,13 @@ func New(value string, opts ...CreateOption) *Avatar {
 	return avatar
 }
 
-// WithSize sets the AvatarSize of the generated avatar
-func WithSize(size AvatarSize) func(a *Avatar) {
+// WithPatternSize sets the PatternSize of the generated avatar.
+// Pattern size is used to set the base image pixel pattern of the avatar.
+// PATTERN_SIZE_5 creates an avatar of 5 * 5 pixel pattern.
+// PatternSize is different from Dimension and is only used to set the base image pattern size.
+func WithPatternSize(size PatternSize) func(a *Avatar) {
 	return func(a *Avatar) {
-		a.size = size
+		a.patternSize = size
 	}
 }
 
@@ -112,7 +115,7 @@ func (av *Avatar) GenerateAvatar() (*AvatarResult, error) {
 	a := uint8(uint64(byteSum(hash[24:32])) % 256)
 	avatarColor := color.RGBA{r, g, b, a}
 
-	height, width := av.size, av.size
+	height, width := av.patternSize, av.patternSize
 	av.image = image.NewRGBA(image.Rect(0, 0, int(height), int(width)))
 
 	av.applyAlgorithm(avatarColor, av.darkMode)
@@ -141,7 +144,7 @@ func (av *Avatar) GenerateAvatar() (*AvatarResult, error) {
 
 func (av *Avatar) applyAlgorithm(colorToFill color.Color, darkMode bool) {
 	algoFunc := algoExecutorMap[av.algo]
-	algoFunc(av.image, int(av.size), colorToFill, darkMode)
+	algoFunc(av.image, int(av.patternSize), colorToFill, darkMode)
 }
 
 func (av *Avatar) scaleImage() {
