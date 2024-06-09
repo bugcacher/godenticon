@@ -48,12 +48,15 @@ func New(value string, opts ...CreateOption) *Avatar {
 	return avatar
 }
 
+// WithSize sets the AvatarSize of the generated avatart
 func WithSize(size AvatarSize) func(a *Avatar) {
 	return func(a *Avatar) {
 		a.size = size
 	}
 }
 
+// WithOutputDir sets the directory path of the generate avatar image file.
+// WithOutputDir will not have any effect if Output type is OUTPUT_BUFFER
 func WithOutputDir(path string) func(a *Avatar) {
 	if err := ensurePath(path); err != nil {
 		log.Default().Fatal("Invalid path given")
@@ -63,24 +66,31 @@ func WithOutputDir(path string) func(a *Avatar) {
 	}
 }
 
+// WithAlgorithm sets the algorithm used for generating the avatar
 func WithAlgorithm(algo Algorithm) func(a *Avatar) {
 	return func(a *Avatar) {
 		a.algo = algo
 	}
 }
 
+// WithDarkMode is used to generate the avatar in dark mode.
+// In dark mode avatar background is of Black color instead of White color (default).
 func WithDarkMode() func(a *Avatar) {
 	return func(a *Avatar) {
 		a.darkMode = true
 	}
 }
 
+// WithOutputType sets the Output type. Avatar can be saved in
+// a file or in buffer.
 func WithOutputType(outputType Output) func(a *Avatar) {
 	return func(a *Avatar) {
 		a.outputType = outputType
 	}
 }
 
+
+// GenerateAvatar generates an unique avatar for the given value.
 func (av *Avatar) GenerateAvatar() (*AvatarResult, error) {
 	hash := sha256.Sum256([]byte(av.value))
 	seed := binary.BigEndian.Uint32(hash[:])
