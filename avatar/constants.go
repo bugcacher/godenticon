@@ -7,12 +7,12 @@ const (
 	ALGORITHM_2
 )
 
-type PatternSize uint
+type PixelPattern uint
 
 const (
-	PATTERN_SIZE_5 PatternSize = 5
-	PATTERN_SIZE_7 PatternSize = 7
-	PATTERN_SIZE_9 PatternSize = 9
+	PIXEL_PATTERN_5 PixelPattern = 5
+	PIXEL_PATTERN_7 PixelPattern = 7
+	PIXEL_PATTERN_9 PixelPattern = 9
 )
 
 type Output int
